@@ -26,7 +26,7 @@ const MemberActivityLogs = require('../../models/member/activity_log_model');
 const CompanyTransaction = require('../../models/company/trans_model');
 const CreditUsage = require('../../models/common/credit_usage');
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const editProfileValidation = require('../../validations/common/edit_profile_validation');
 const inviteValidation = require('../../validations/company/invite_validation');
 const addCompanyValidation = require('../../validations/admin/addcompany_validation');

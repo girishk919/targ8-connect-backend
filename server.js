@@ -85,11 +85,11 @@ app.use('/zoho/auth', zohoAuthRouter);
 const plansRouter = require('./routes/company/plans');
 app.use('/company/plans', plansRouter);
 
-const creditRouter = require('./routes/company/buy_more_credits');
-app.use('/company/credit', creditRouter);
+// const creditRouter = require('./routes/company/buy_more_credits');
+// app.use('/company/credit', creditRouter);
 
-const userRouter = require('./routes/company/buy_more_users');
-app.use('/company/user', userRouter);
+// const userRouter = require('./routes/company/buy_more_users');
+// app.use('/company/user', userRouter);
 
 const adminFeaturesRouter = require('./routes/admin/features');
 app.use('/admin/features/', adminFeaturesRouter);
@@ -97,11 +97,11 @@ app.use('/admin/features/', adminFeaturesRouter);
 const adminPotentialCustomers = require('./routes/admin/potentialCustomers');
 app.use('/admin/potential_customers', adminPotentialCustomers);
 
-const adminSubscriptionRouter = require('./routes/admin/subscription');
-app.use('/admin/subscription', adminSubscriptionRouter);
+// const adminSubscriptionRouter = require('./routes/admin/subscription');
+// app.use('/admin/subscription', adminSubscriptionRouter);
 
-const adminProductRouter = require('./routes/admin/product');
-app.use('/admin/product', adminProductRouter);
+// const adminProductRouter = require('./routes/admin/product');
+// app.use('/admin/product', adminProductRouter);
 
 const adminCategoryRouter = require('./routes/admin/category');
 app.use('/admin/category', adminCategoryRouter);
@@ -136,11 +136,11 @@ app.use('/department', departmentRouter);
 const keyRouter = require('./routes/company/api');
 app.use('/key', keyRouter);
 
-const companyLeadsRouter = require('./routes/common/leads');
-app.use('/leads', companyLeadsRouter);
+// const companyLeadsRouter = require('./routes/common/leads');
+// app.use('/leads', companyLeadsRouter);
 
-const InternalRouter = require('./routes/common/internal');
-app.use('/internal', apiLimiter, InternalRouter);
+// const InternalRouter = require('./routes/common/internal');
+// app.use('/internal', apiLimiter, InternalRouter);
 
 const CampaignRouter = require('./routes/common/campaign');
 app.use('/campaign', CampaignRouter);
