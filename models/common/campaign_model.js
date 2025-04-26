@@ -29,6 +29,20 @@ const campaignsSchema = new Schema(
 				originalName: { type: String },
 			},
 		],
+		delivery: [
+			{
+				date: { type: String },
+				leadsVolume: { type: String },
+				leadsScore: { type: String },
+				leadsUnderAudit: { type: String },
+				leadsReadyForDelivery: { type: String },
+				delivered: { type: String },
+				rejects: { type: String },
+				balance: { type: String },
+				path: { type: String },
+				originalName: { type: String },
+			},
+		],
 	},
 	{ timestamps: true }
 );

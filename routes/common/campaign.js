@@ -55,6 +55,30 @@ router.post(
 	}
 );
 
+router.post(
+	'/addDelivery',
+	[authorize.verifyToken],
+	upload.single('file'),
+	async (req, res) => {
+		try {
+			req.body.path = req.file.path;
+			req.body.originalName = req.file.originalname;
+
+			var delivery = { ...req.body, date: new Date().toISOString() };
+
+			const data = await campaign_model.findById(req.body.id);
+			data.delivery.push(delivery);
+
+			await data.save();
+
+			res.status(200).json('Added Successfully');
+		} catch (err) {
+			console.error(err);
+			res.status(500).json({ success: false, message: 'Upload failed' });
+		}
+	}
+);
+
 router.get(
 	'/common',
 	[authorize.verifyToken, authorize.accessAdmin],
@@ -117,5 +141,22 @@ router.get('/getAll', [authorize.verifyToken], async (req, res) => {
 		res.status(500).json({ success: false, message: 'Something went wrong' });
 	}
 });
+
+router.patch(
+	'/changeStatus',
+	[authorize.verifyToken, authorize.accessAdmin],
+	async (req, res) => {
+		try {
+			await campaign_model.findByIdAndUpdate(req.body.id, {
+				$set: { status: req.body.status },
+			});
+
+			return res.json('Updated Successfully');
+		} catch (err) {
+			console.error(err);
+			res.status(500).json({ success: false, message: 'Something went wrong' });
+		}
+	}
+);
 
 module.exports = router;
