@@ -6,6 +6,7 @@ const authorize = require('../../helpers/authorize');
 const multer = require('multer');
 const path = require('path');
 const campaign_model = require('../../models/common/campaign_model');
+const company_model = require('../../models/company/company_model');
 const uploadDir = path.join(__dirname, '../campaignFiles');
 
 const storage = multer.diskStorage({
@@ -46,6 +47,8 @@ router.post(
 				specification: req.body[`specification_${index}`] || '',
 			}));
 
+			const comp = await company_model.findOne({ clientCode: req.body.client });
+			req.body.clientName = comp?.username;
 			await campaign_model.create(req.body);
 			res.status(200).json('Created Successfully');
 		} catch (err) {

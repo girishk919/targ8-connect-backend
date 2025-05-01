@@ -436,8 +436,8 @@ router.post(
 			// const msg = {
 			// 	to: genCompany.email,
 			// 	from: 'team@emailaddress.ai',
-			// 	subject: 'Your EmailAddress.ai account is ready',
-			// 	html: `<p>Thank you for signing up with EmailAddress.ai.</p><br />
+			// 	subject: 'Your Targ8.ai account is ready',
+			// 	html: `<p>Thank you for signing up with Targ8.ai.</p><br />
 			// <p>To complete the setup, please verify your email by clicking on this
 			// <a href="${process.env.BackendURL}/company/auth/activate?company_id=${genCompany._id}">Link.</a></p><br />
 			// <p>In case, you are having trouble, you can also copy and paste this link in your browser:</p><br/>
