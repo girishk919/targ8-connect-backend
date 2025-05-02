@@ -111,6 +111,50 @@ router.get(
 );
 
 router.get(
+	'/all',
+	[authorize.verifyToken, authorize.accessCompany],
+	async (req, res) => {
+		try {
+			const company = await Companies.findById(req.user.id);
+
+			if (!company) return res.status(400).json('Company not found!');
+
+			const members_array = [
+				{
+					_id: company?._id,
+					name: company?.name,
+					username: company?.username,
+					clientCode: company?.clientCode,
+					email: company?.email,
+				},
+			];
+
+			const allmem = await Members.find({ company_id: company._id });
+
+			for (let i = 0; i < allmem?.length; i++) {
+				const object = {
+					_id: allmem[i]?._id,
+					name: allmem[i]?.name,
+					username: allmem[i]?.username,
+					clientCode: allmem[i]?.clientCode,
+					email: allmem[i]?.email,
+				};
+
+				members_array.push(object);
+			}
+
+			return res.json(members_array);
+		} catch (error) {
+			console.log('ok', error);
+			dashLogger.error(
+				`Error : ${error}, Request : ${req.originalUrl}, UserType: ${req.user.role}, User: ${req.user.id}, Username: ${req.user.name}`
+			);
+			res.status(400).json(error.message);
+		}
+	}
+);
+
+router.get(
 	'/getOneMember',
 	[authorize.verifyToken, authorize.accessCompany],
 	async (req, res) => {
