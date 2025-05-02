@@ -67,6 +67,8 @@ router.get(
 				const object = {
 					_id: allmem[i]?._id,
 					name: allmem[i]?.name,
+					username: allmem[i]?.username,
+					clientCode: allmem[i]?.clientCode,
 					email: allmem[i]?.email,
 					login_ip: allmem[i]?.login_ip,
 					credits: allmem[i]?.credits,
@@ -899,7 +901,7 @@ router.get(
 
 router.get(
 	'/blockunblock',
-	[authorize.verifyToken, authorize.accessCompany, subscription_validater],
+	[authorize.verifyToken, authorize.accessCompany],
 	async (req, res) => {
 		try {
 			const company = await Companies.findById(req.user.id);
@@ -920,38 +922,38 @@ router.get(
 			await member.save();
 
 			if (member.blocked) {
-				const msg = {
-					to: member.email,
-					from: 'team@emailaddress.ai',
-					subject: 'Your EmailAddress.ai account is blocked',
-					html: `<p>Your EmailAddress.ai account has been blocked by the admin.</p><br />
-			<p>If you any problem, please contact support via Live chat or send an email to team@emailaddress.ai</p><br/>
-			<p>Thanks,</p><p>Team EmailAddress.ai</p><br /><p>EmailAddress.ai</p><p>447 Broadway, 2nd floor, #713</p><p>NewYork, NY 10013, USA</p>`,
-				};
-				transport.sendMail(msg, (err, info) => {
-					if (err) {
-						console.log(err);
-					} else {
-						console.log('Invitation Sent!');
-					}
-				});
+				// 	const msg = {
+				// 		to: member.email,
+				// 		from: 'team@emailaddress.ai',
+				// 		subject: 'Your EmailAddress.ai account is blocked',
+				// 		html: `<p>Your EmailAddress.ai account has been blocked by the admin.</p><br />
+				// <p>If you any problem, please contact support via Live chat or send an email to team@emailaddress.ai</p><br/>
+				// <p>Thanks,</p><p>Team EmailAddress.ai</p><br /><p>EmailAddress.ai</p><p>447 Broadway, 2nd floor, #713</p><p>NewYork, NY 10013, USA</p>`,
+				// 	};
+				// 	transport.sendMail(msg, (err, info) => {
+				// 		if (err) {
+				// 			console.log(err);
+				// 		} else {
+				// 			console.log('Invitation Sent!');
+				// 		}
+				// 	});
 				return res.json('Member blocked!');
 			} else {
-				const msg = {
-					to: member.email,
-					from: 'team@emailaddress.ai',
-					subject: 'Your EmailAddress.ai account is unblocked',
-					html: `<p>Your EmailAddress.ai account has been unblocked by the admin.</p><br />
-			<p>If you any problem, please contact support via Live chat or send an email to team@emailaddress.ai</p><br/>
-			<p>Thanks,</p><p>Team EmailAddress.ai</p><br /><p>EmailAddress.ai</p><p>447 Broadway, 2nd floor, #713</p><p>NewYork, NY 10013, USA</p>`,
-				};
-				transport.sendMail(msg, (err, info) => {
-					if (err) {
-						console.log(err);
-					} else {
-						console.log('Invitation Sent!');
-					}
-				});
+				// 	const msg = {
+				// 		to: member.email,
+				// 		from: 'team@emailaddress.ai',
+				// 		subject: 'Your EmailAddress.ai account is unblocked',
+				// 		html: `<p>Your EmailAddress.ai account has been unblocked by the admin.</p><br />
+				// <p>If you any problem, please contact support via Live chat or send an email to team@emailaddress.ai</p><br/>
+				// <p>Thanks,</p><p>Team EmailAddress.ai</p><br /><p>EmailAddress.ai</p><p>447 Broadway, 2nd floor, #713</p><p>NewYork, NY 10013, USA</p>`,
+				// 	};
+				// 	transport.sendMail(msg, (err, info) => {
+				// 		if (err) {
+				// 			console.log(err);
+				// 		} else {
+				// 			console.log('Invitation Sent!');
+				// 		}
+				// 	});
 				return res.json('Member unblocked!');
 			}
 		} catch (error) {
@@ -962,7 +964,7 @@ router.get(
 
 router.get(
 	'/suspendUnsuspend',
-	[authorize.verifyToken, authorize.accessCompany, subscription_validater],
+	[authorize.verifyToken, authorize.accessCompany],
 	async (req, res) => {
 		try {
 			const company = await Companies.findById(req.user.id);
@@ -979,38 +981,38 @@ router.get(
 			await member.save();
 
 			if (member.suspended) {
-				const msg = {
-					to: member.email,
-					from: 'team@emailaddress.ai',
-					subject: 'Your EmailAddress.ai account is suspended',
-					html: `<p>Your EmailAddress.ai account has been suspended by the admin.</p><br />
-			<p>If you any problem, please contact support via Live chat or send an email to team@emailaddress.ai</p><br/>
-			<p>Thanks,</p><p>Team EmailAddress.ai</p><br /><p>EmailAddress.ai</p><p>447 Broadway, 2nd floor, #713</p><p>NewYork, NY 10013, USA</p>`,
-				};
-				transport.sendMail(msg, (err, info) => {
-					if (err) {
-						console.log(err);
-					} else {
-						console.log('Invitation Sent!');
-					}
-				});
+				// 	const msg = {
+				// 		to: member.email,
+				// 		from: 'team@emailaddress.ai',
+				// 		subject: 'Your EmailAddress.ai account is suspended',
+				// 		html: `<p>Your EmailAddress.ai account has been suspended by the admin.</p><br />
+				// <p>If you any problem, please contact support via Live chat or send an email to team@emailaddress.ai</p><br/>
+				// <p>Thanks,</p><p>Team EmailAddress.ai</p><br /><p>EmailAddress.ai</p><p>447 Broadway, 2nd floor, #713</p><p>NewYork, NY 10013, USA</p>`,
+				// 	};
+				// 	transport.sendMail(msg, (err, info) => {
+				// 		if (err) {
+				// 			console.log(err);
+				// 		} else {
+				// 			console.log('Invitation Sent!');
+				// 		}
+				// 	});
 				return res.json('Member suspended!');
 			} else {
-				const msg = {
-					to: member.email,
-					from: 'team@emailaddress.ai',
-					subject: 'Your EmailAddress.ai account is unsuspended',
-					html: `<p>Your EmailAddress.ai account has been unsuspended by the admin.</p><br />
-			<p>If you any problem, please contact support via Live chat or send an email to team@emailaddress.ai</p><br/>
-			<p>Thanks,</p><p>Team EmailAddress.ai</p><br /><p>EmailAddress.ai</p><p>447 Broadway, 2nd floor, #713</p><p>NewYork, NY 10013, USA</p>`,
-				};
-				transport.sendMail(msg, (err, info) => {
-					if (err) {
-						console.log(err);
-					} else {
-						console.log('Invitation Sent!');
-					}
-				});
+				// 	const msg = {
+				// 		to: member.email,
+				// 		from: 'team@emailaddress.ai',
+				// 		subject: 'Your EmailAddress.ai account is unsuspended',
+				// 		html: `<p>Your EmailAddress.ai account has been unsuspended by the admin.</p><br />
+				// <p>If you any problem, please contact support via Live chat or send an email to team@emailaddress.ai</p><br/>
+				// <p>Thanks,</p><p>Team EmailAddress.ai</p><br /><p>EmailAddress.ai</p><p>447 Broadway, 2nd floor, #713</p><p>NewYork, NY 10013, USA</p>`,
+				// 	};
+				// 	transport.sendMail(msg, (err, info) => {
+				// 		if (err) {
+				// 			console.log(err);
+				// 		} else {
+				// 			console.log('Invitation Sent!');
+				// 		}
+				// 	});
 				return res.json('Member unsuspended!');
 			}
 		} catch (error) {
@@ -1021,12 +1023,10 @@ router.get(
 
 router.delete(
 	'/deleteMember',
-	[authorize.verifyToken, authorize.accessCompany, subscription_validater],
+	[authorize.verifyToken, authorize.accessCompany],
 	async (req, res) => {
 		try {
-			const company = await Companies.findById(req.user.id)
-				.populate('members')
-				.populate('credit_requests');
+			const company = await Companies.findById(req.user.id);
 			if (!company) return res.status(400).json('Company not found!');
 
 			const member = await Members.findOne({
@@ -1035,31 +1035,20 @@ router.delete(
 			});
 			if (!member) return res.status(400).json('Member not found!');
 
-			const credits = member.credits;
+			// for (let i = 0; i < member.search.length; i++) {
+			// 	await SaveSearch.findByIdAndDelete(member.search[i]);
+			// }
 
-			company.members = company.members.filter((element) => {
-				if (element._id.equals(member._id)) {
-					return false;
-				}
-				return true;
-			});
+			// company.credit_requests = company.credit_requests.filter((element) => {
+			// 	if (element.member.equals(member._id)) {
+			// 		return false;
+			// 	}
+			// 	return true;
+			// });
 
-			company.credits += credits;
-
-			for (let i = 0; i < member.search.length; i++) {
-				await SaveSearch.findByIdAndDelete(member.search[i]);
-			}
-
-			company.credit_requests = company.credit_requests.filter((element) => {
-				if (element.member.equals(member._id)) {
-					return false;
-				}
-				return true;
-			});
-
-			for (let i = 0; i < member.credit_requests.length; i++) {
-				await CreditRequests.findByIdAndDelete(member.credit_requests[i]);
-			}
+			// for (let i = 0; i < member.credit_requests.length; i++) {
+			// 	await CreditRequests.findByIdAndDelete(member.credit_requests[i]);
+			// }
 
 			const logs = await MemberActivityLogs.find({ member: member._id });
 
