@@ -110,10 +110,14 @@ router.post(
 			if (req.body.status !== 'all') {
 				query['status'] = req.body.status;
 			}
-			if (req.body.startDate) {
+			if (req.body.startDate && req.body.endDate) {
+				query['$and'] = [
+					{ startDate: { $gte: new Date(req.body.startDate) } },
+					{ endDate: { $lte: new Date(req.body.endDate) } },
+				];
+			} else if (req.body.startDate) {
 				query['startDate'] = { $gte: new Date(req.body.startDate) };
-			}
-			if (req.body.endDate) {
+			} else if (req.body.endDate) {
 				query['endDate'] = { $lte: new Date(req.body.endDate) };
 			}
 			if (req.body.clients?.length) {
