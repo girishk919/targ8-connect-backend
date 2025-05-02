@@ -84,7 +84,7 @@ router.get('/myProfile', [authorize.verifyToken], async (req, res) => {
 				clientCode: person?.clientCode,
 				username: person?.username,
 				company_clientCode: person?.company_id.clientCode,
-				company_name: person?.company_id.company_name,
+				company_name: person?.company_id.name,
 				type: 'MEMBER',
 				isOnboard: person?.isOnboard,
 			};
