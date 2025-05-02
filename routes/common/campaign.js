@@ -7,6 +7,7 @@ const multer = require('multer');
 const path = require('path');
 const campaign_model = require('../../models/common/campaign_model');
 const company_model = require('../../models/company/company_model');
+const member_model = require('../../models/member/member_model');
 const uploadDir = path.join(__dirname, '../campaignFiles');
 
 const storage = multer.diskStorage({
@@ -48,7 +49,15 @@ router.post(
 			}));
 
 			const comp = await company_model.findOne({ clientCode: req.body.client });
-			req.body.clientName = comp?.username;
+			req.body.company = comp?._id;
+
+			if (req.body.member) {
+				const memb = await member_model.findOne({
+					clientCode: req.body.member,
+				});
+				req.body.memberId = memb?._id;
+			}
+
 			await campaign_model.create(req.body);
 			res.status(200).json('Created Successfully');
 		} catch (err) {
@@ -82,7 +91,7 @@ router.post(
 	}
 );
 
-router.get(
+router.post(
 	'/common',
 	[authorize.verifyToken, authorize.accessAdmin],
 	async (req, res) => {
@@ -90,13 +99,39 @@ router.get(
 			const person = req.person;
 			if (!person) return res.status(400).json('Account not found!');
 
-			var page = req.query.page ? Number(req.query.page) : 1;
-			var limit = req.query.limit ? Number(req.query.limit) : 10;
+			var page = req.body.pg ? Number(req.body.pg) : 1;
+			var limit = req.body.lm ? Number(req.body.lm) : 10;
 			var skip = (page - 1) * limit;
 
-			const data = await campaign_model.find().skip(skip).limit(limit);
+			var query = {};
+			if (req.body.search) {
+				query['name'] = { $regex: req.body.search, $options: 'i' };
+			}
+			if (req.body.status !== 'all') {
+				query['status'] = req.body.status;
+			}
+			if (req.body.startDate) {
+				query['startDate'] = { $gte: new Date(req.body.startDate) };
+			}
+			if (req.body.endDate) {
+				query['endDate'] = { $lte: new Date(req.body.endDate) };
+			}
+			if (req.body.clients?.length) {
+				query['client'] = { $in: req.body.clients };
+			}
+			if (req.body.members?.length) {
+				query['member'] = { $in: req.body.members };
+			}
 
-			const totalCount = await campaign_model.countDocuments({});
+			const data = await campaign_model
+				.find(query)
+				.sort({ updatedAt: -1 })
+				.skip(skip)
+				.limit(limit)
+				.populate('company')
+				.populate('memberId');
+
+			const totalCount = await campaign_model.countDocuments(query);
 
 			var pages = Math.ceil(totalCount / limit);
 
@@ -113,23 +148,41 @@ router.get(
 	}
 );
 
-router.get('/getAll', [authorize.verifyToken], async (req, res) => {
+router.post('/getAll', [authorize.verifyToken], async (req, res) => {
 	try {
 		const person = req.person;
 		if (!person) return res.status(400).json('Account not found!');
 
-		var page = req.query.page ? Number(req.query.page) : 1;
-		var limit = req.query.limit ? Number(req.query.limit) : 10;
+		var page = req.body.pg ? Number(req.body.pg) : 1;
+		var limit = req.body.lm ? Number(req.body.lm) : 10;
 		var skip = (page - 1) * limit;
 
-		const data = await campaign_model
-			.find({ client: person?.clientCode })
-			.skip(skip)
-			.limit(limit);
+		var query = { client: person?.clientCode };
+		if (req.body.search) {
+			query['name'] = { $regex: req.body.search, $options: 'i' };
+		}
+		if (req.body.status !== 'all') {
+			query['status'] = req.body.status;
+		}
+		if (req.body.startDate) {
+			query['startDate'] = { $gte: new Date(req.body.startDate) };
+		}
+		if (req.body.endDate) {
+			query['endDate'] = { $lte: new Date(req.body.endDate) };
+		}
+		if (req.body.members?.length) {
+			query['member'] = { $in: req.body.members };
+		}
 
-		const totalCount = await campaign_model.countDocuments({
-			client: person?.clientCode,
-		});
+		const data = await campaign_model
+			.find(query)
+			.sort({ updatedAt: -1 })
+			.skip(skip)
+			.limit(limit)
+			.populate('company')
+			.populate('memberId');
+
+		const totalCount = await campaign_model.countDocuments(query);
 
 		var pages = Math.ceil(totalCount / limit);
 
