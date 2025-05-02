@@ -64,20 +64,6 @@ router.get('/myProfile', [authorize.verifyToken], async (req, res) => {
 					mobile: person?.mobile,
 					clientCode: person?.clientCode,
 					username: person?.username,
-					type: 'FREE USER',
-					planType: person.planType,
-					plan: person?.plan,
-					AssMem: person?.members?.length + 1 + person?.invites?.length,
-					UnassMem:
-						person?.plan?.max_members -
-						(person?.members?.length + 1 + person?.invites?.length),
-					totalCredits: person?.totalCredits,
-					availCredits: person?.credits,
-					isOnboard: person?.isOnboard,
-					is_internal_user: person?.is_internal_user,
-					upload_limit: person?.upload_limit,
-					is_file_enhancer_user: person?.is_file_enhancer_user,
-					profileVisit: person?.profileVisit,
 				};
 			} else {
 				data = {
@@ -87,19 +73,6 @@ router.get('/myProfile', [authorize.verifyToken], async (req, res) => {
 					clientCode: person?.clientCode,
 					username: person?.username,
 					isOnboard: person?.isOnboard,
-					type: 'PREMIUM USER',
-					planType: person?.planType,
-					AssMem: person?.members?.length + 1 + person?.invites?.length,
-					UnassMem:
-						person?.plan?.max_members -
-						(person?.members?.length + 1 + person?.invites?.length),
-					plan: person?.plan,
-					totalCredits: person?.totalCredits,
-					availCredits: person?.credits,
-					is_internal_user: person?.is_internal_user,
-					upload_limit: person?.upload_limit,
-					is_file_enhancer_user: person?.is_file_enhancer_user,
-					profileVisit: person?.profileVisit,
 				};
 			}
 		}
@@ -108,23 +81,12 @@ router.get('/myProfile', [authorize.verifyToken], async (req, res) => {
 			data = {
 				name: person?.name,
 				email: person?.email,
-				department: person?.department,
+				clientCode: person?.clientCode,
+				username: person?.username,
+				company_clientCode: person?.company_id.clientCode,
 				company_name: person?.company_id.company_name,
 				type: 'MEMBER',
-				plan: person?.company_id.plan,
 				isOnboard: person?.isOnboard,
-				AssMem:
-					person?.company_id?.members?.length +
-					1 +
-					person?.company_id?.invites?.length,
-				UnassMem:
-					person?.company_id?.plan?.max_members -
-					(person?.company_id?.members?.length +
-						1 +
-						person?.company_id?.invites?.length),
-				totalCredits: person?.totalCredits,
-				availCredits: person?.credits,
-				profileVisit: person?.profileVisit,
 			};
 		}
 
