@@ -44,8 +44,14 @@ const campaignsSchema = new Schema(
 				delivered: { type: String },
 				rejects: { type: String },
 				balance: { type: String },
-				path: { type: String },
-				originalName: { type: String },
+				files: [
+					{
+						path: { type: String },
+						originalName: { type: String },
+						specification: { type: String },
+						date: { type: String },
+					},
+				],
 			},
 		],
 	},

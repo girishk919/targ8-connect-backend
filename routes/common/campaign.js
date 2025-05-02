@@ -73,8 +73,14 @@ router.post(
 	upload.single('file'),
 	async (req, res) => {
 		try {
-			req.body.path = req.file.path;
-			req.body.originalName = req.file.originalname;
+			req.body.files = [
+				{
+					path: req.file.path,
+					originalName: req.file.originalname,
+					specification: req.body[`specification_0`] || 'Delivery',
+					date: new Date().toISOString(),
+				},
+			];
 
 			var delivery = { ...req.body, date: new Date().toISOString() };
 
