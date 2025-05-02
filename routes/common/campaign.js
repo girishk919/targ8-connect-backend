@@ -112,13 +112,13 @@ router.post(
 			}
 			if (req.body.startDate && req.body.endDate) {
 				query['$and'] = [
-					{ startDate: { $gte: new Date(req.body.startDate) } },
-					{ endDate: { $lte: new Date(req.body.endDate) } },
+					{ startDate: { $lte: new Date(req.body.startDate) } },
+					{ endDate: { $gte: new Date(req.body.endDate) } },
 				];
 			} else if (req.body.startDate) {
-				query['startDate'] = { $gte: new Date(req.body.startDate) };
+				query['startDate'] = { $lte: new Date(req.body.startDate) };
 			} else if (req.body.endDate) {
-				query['endDate'] = { $lte: new Date(req.body.endDate) };
+				query['endDate'] = { $gte: new Date(req.body.endDate) };
 			}
 			if (req.body.clients?.length) {
 				query['client'] = { $in: req.body.clients };
