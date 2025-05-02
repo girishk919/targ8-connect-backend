@@ -3,6 +3,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 //const sgMail = require('@sendgrid/mail');
+const bcrypt = require('bcryptjs');
 
 const router = express.Router();
 
@@ -37,6 +38,7 @@ const subscription_validater = require('../../helpers/subscription_validator');
 
 //sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const nodemailer = require('nodemailer');
+const sub_admin_model = require('../../models/sub-admin/sub_admin_model');
 let transport = nodemailer.createTransport({
 	pool: true,
 	host: 'smtp.gmail.com',
@@ -59,22 +61,24 @@ router.get(
 
 			const members_array = [];
 
-			// for (let i = 0; i < company?.members?.length; i++) {
-			// 	const object = {
-			// 		_id: company.members[i]._id,
-			// 		name: company.members[i].name,
-			// 		email: company.members[i].email,
-			// 		login_ip: company.members[i].login_ip,
-			// 		credits: company.members[i].credits,
-			// 		last_login: company.members[i].last_login,
-			// 		createdAt: company.members[i].createdAt,
-			// 		status: true,
-			// 		blocked: company.members[i].blocked,
-			// 		suspended: company.members[i].suspended,
-			// 	};
+			const allmem = await Members.find({ company_id: company._id });
 
-			// 	members_array.push(object);
-			// }
+			for (let i = 0; i < allmem?.length; i++) {
+				const object = {
+					_id: allmem[i]?._id,
+					name: allmem[i]?.name,
+					email: allmem[i]?.email,
+					login_ip: allmem[i]?.login_ip,
+					credits: allmem[i]?.credits,
+					last_login: allmem[i]?.last_login,
+					createdAt: allmem[i]?.createdAt,
+					status: true,
+					blocked: allmem[i]?.blocked,
+					suspended: allmem[i]?.suspended,
+				};
+
+				members_array.push(object);
+			}
 
 			// for (let i = 0; i < company?.invites?.length; i++) {
 			// 	const object = {
@@ -106,7 +110,7 @@ router.get(
 
 router.get(
 	'/getOneMember',
-	[authorize.verifyToken, authorize.accessCompany, subscription_validater],
+	[authorize.verifyToken, authorize.accessCompany],
 	async (req, res) => {
 		try {
 			const company = await Companies.findById(req.user.id);
@@ -114,8 +118,8 @@ router.get(
 
 			const member_id = mongoose.Types.ObjectId(req.query.member_id);
 
-			if (!company.members.includes(member_id))
-				return res.status(400).json('Member not found!');
+			// if (!company.members.includes(member_id))
+			// 	return res.status(400).json('Member not found!');
 
 			const member = await Members.findOne({
 				_id: member_id,
@@ -133,162 +137,115 @@ router.get(
 	}
 );
 
-// router.post(
-// 	'/invite',
-// 	[authorize.verifyToken, subscription_validater, authorize.accessCompany],
-// 	async (req, res) => {
-// 		try {
-// 			const email = req.body.email.toLowerCase();
-// 			const company = await Companies.findById(req.user.id).populate('plan');
-// 			if (!company) return res.status(400).json('Company not found!');
+router.post(
+	'/invite',
+	[authorize.verifyToken, authorize.accessCompany],
+	async (req, res) => {
+		try {
+			const email = req.body.email.toLowerCase();
+			const company = await Companies.findById(req.user.id);
+			if (!company) return res.status(400).json('Company not found!');
 
-// 			if (company.plan == null)
-// 				return res.status(400).json('You currently have no subscription plan');
+			// if (company.plan == null)
+			// 	return res.status(400).json('You currently have no subscription plan');
 
-// 			const member = await Members.findOne({ email: email });
-// 			if (member) return res.status(400).json('Member already exists');
+			const member = await Members.findOne({ email: email });
+			if (member) return res.status(400).json('Email already exists');
 
-// 			const invite = await Invites.findOne({ email: email });
-// 			if (invite) return res.status(400).json('Invite already sent');
+			const member2 = await Members.findOne({ username: req.body.username });
+			if (member2) return res.status(400).json('Username already exists');
 
-// 			if (company.email === email)
-// 				return res.status(400).json('You cannot add your self as member!');
+			// const invite = await Invites.findOne({ email: email });
+			// if (invite) return res.status(400).json('Invite already sent');
 
-// 			const company7 = await await Admins.findOne({ email: email });
-// 			if (company7) return res.status(400).json('Email already exists!');
+			if (company.email === email)
+				return res.status(400).json('You cannot add your self as member!');
 
-// 			const firstEmail = company.email.split('@');
-// 			const secondEmail = email.split('@');
+			const company7 = await Admins.findOne({ email: email });
+			if (company7) return res.status(400).json('Email already exists!');
 
-// 			if (firstEmail[1] !== secondEmail[1])
-// 				return res.status(400).json("Member doesn't belong to your company!");
+			const company8 = await sub_admin_model.findOne({ email: email });
+			if (company8) return res.status(400).json('Email already exists!');
 
-// 			if (company.credits < req.body.credits)
-// 				return res.status(400).json('Not enough credits');
+			const company9 = await Companies.findOne({ email: email });
+			if (company9) return res.status(400).json('Email already exists!');
 
-// 			if (
-// 				company.members.length + company.invites.length + 1 >=
-// 				company.plan.max_members
-// 			) {
-// 				return res
-// 					.status(400)
-// 					.json('Subscription does not allow more members to add.');
-// 			}
+			const company10 = await Companies.findOne({
+				username: req.body.username,
+			});
+			if (company10) return res.status(400).json('Username already exists!');
 
-// 			if (company.plan.subscription_type === 'Free Trial') {
-// 				return res.status(400).json('Cannot buy credits in free trial');
-// 			}
-// 			const subscription = await Subscriptions.findOne({
-// 				title: company.plan.subscription_type,
-// 			});
-// 			if (!subscription)
-// 				return res.status(400).json('Plan does not exist anymore!');
-// 			const addtempPlan = new TempPlan({
-// 				company_id: company._id,
-// 				subscription_type: 'Add User',
-// 				subscription_amount: subscription.cost_per_user,
-// 			});
+			// const firstEmail = company.email.split('@');
+			// const secondEmail = email.split('@');
 
-// 			var genplan = await addtempPlan.save();
-// 			var price = subscription.stripe_cpu_price_id;
+			// if (firstEmail[1] !== secondEmail[1])
+			// 	return res.status(400).json("Member doesn't belong to your company!");
 
-// 			//company.credits -= req.body.credits;
-// 			await company.save();
+			// if (company.credits < req.body.credits)
+			// 	return res.status(400).json('Not enough credits');
 
-// 			const tmpInvite = new tempInvite({
-// 				name: req.body.name,
-// 				email: email,
-// 				company_name: company.company_name,
-// 				credits: req.body.credits,
-// 			});
-// 			const tmpInv = await tmpInvite.save();
+			// if (
+			// 	company.members.length + company.invites.length + 1 >=
+			// 	company.plan.max_members
+			// ) {
+			// 	return res
+			// 		.status(400)
+			// 		.json('Subscription does not allow more members to add.');
+			// }
 
-// 			if (req.body.payment_gateway === 'STRIPE') {
-// 				const session = await stripe.checkout.sessions.create({
-// 					customer_email: company.email,
-// 					line_items: [
-// 						{
-// 							price: price,
-// 							quantity: 1,
-// 						},
-// 					],
-// 					mode: 'payment',
-// 					success_url: `${process.env.BackendURL}/company/members/successPaymentNow?trans_id=${genplan._id}&invite_id=${tmpInv._id}`,
-// 					cancel_url: `${process.env.FrontendURL}/billing`,
-// 				});
+			// if (company.plan.subscription_type === 'Free Trial') {
+			// 	return res.status(400).json('Cannot buy credits in free trial');
+			// }
+			// const subscription = await Subscriptions.findOne({
+			// 	title: company.plan.subscription_type,
+			// });
+			// if (!subscription)
+			// 	return res.status(400).json('Plan does not exist anymore!');
+			// const addtempPlan = new TempPlan({
+			// 	company_id: company._id,
+			// 	subscription_type: 'Add User',
+			// 	subscription_amount: subscription.cost_per_user,
+			// });
 
-// 				genplan.paymentIntent = session.id;
-// 				await genplan.save();
+			// var genplan = await addtempPlan.save();
+			// var price = subscription.stripe_cpu_price_id;
 
-// 				var data = {
-// 					message: 'Success!',
-// 					link: session.url,
-// 				};
-// 				return res.json(data);
-// 			} else if (req.body.payment_gateway === 'PAYPAL') {
-// 				let usdAmount = subscription.cost_per_user * 0.013;
-// 				usdAmount = usdAmount.toFixed(2);
-// 				usdAmount = usdAmount.toString();
+			//company.credits -= req.body.credits;
+			//	await company.save();
 
-// 				const create_payment = {
-// 					intent: 'sale',
-// 					payer: {
-// 						payment_method: 'paypal',
-// 					},
-// 					redirect_urls: {
-// 						return_url: `https://api.healthdbi.com/company/members/successPaypalNow?trans_id=${genplan._id}&invite_id=${tmpInv._id}`,
-// 						cancel_url: `${process.env.FrontendURL}/profile`,
-// 					},
-// 					transactions: [
-// 						{
-// 							item_list: {
-// 								items: [
-// 									{
-// 										name: subscription.title,
-// 										price: usdAmount,
-// 										currency: 'USD',
-// 										quantity: 1,
-// 									},
-// 								],
-// 							},
-// 							amount: {
-// 								currency: 'USD',
-// 								total: usdAmount,
-// 							},
-// 							description: subscription.desc,
-// 						},
-// 					],
-// 				};
+			const salt = await bcrypt.genSalt(10);
+			const hashPassword = await bcrypt.hash(req.body.password, salt);
 
-// 				paypal.payment.create(create_payment, function (error, payment) {
-// 					if (error) {
-// 						console.log(error.response.details);
-// 						return res.status(400).json('There was some paypal error!');
-// 					} else {
-// 						for (let i = 0; i < payment.links.length; i++) {
-// 							if (payment.links[i].rel === 'approval_url') {
-// 								data = {
-// 									message: 'Success!',
-// 									link: payment.links[i].href,
-// 								};
-// 								return res.json(data);
-// 							}
-// 						}
-// 					}
-// 				});
-// 			} else {
-// 				return res.json('Payment Gateway is required');
-// 			}
+			function generateUniqueCode(length = 6) {
+				const chars =
+					'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+				let result = '';
+				for (let i = 0; i < length; i++) {
+					result += chars.charAt(Math.floor(Math.random() * chars.length));
+				}
+				return result + Date.now().toString(36); // Add timestamp to make it unique
+			}
 
-// 			await company.save();
-// 		} catch (error) {
-// 			dashLogger.error(
-// 				`Error : ${error}, Request : ${req.originalUrl}, UserType: ${req.user.role}, User: ${req.user.id}, Username: ${req.user.name}`
-// 			);
-// 			res.status(400).json('There was some error!' + error.message);
-// 		}
-// 	}
-// );
+			const code = generateUniqueCode();
+
+			await Members.create({
+				name: req.body.name,
+				email: email,
+				username: req.body.username,
+				company_id: company._id,
+				clientCode: code,
+				password: hashPassword,
+			});
+
+			return res.json('New Member Added!');
+		} catch (error) {
+			dashLogger.error(
+				`Error : ${error}, Request : ${req.originalUrl}, UserType: ${req.user.role}, User: ${req.user.id}, Username: ${req.user.name}`
+			);
+			res.status(400).json('There was some error!' + error.message);
+		}
+	}
+);
 
 // router.get('/successPaymentNow', async (req, res) => {
 // 	try {

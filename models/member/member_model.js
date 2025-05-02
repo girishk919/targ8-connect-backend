@@ -7,36 +7,30 @@ const memberSchema = new Schema(
 	{
 		name: {
 			type: String,
-			required: true,
 		},
+		username: { type: String },
 		email: {
 			type: String,
-			required: true,
-			min: 6,
 		},
+		clientCode: { type: String },
 		isOnboard: { type: Boolean, default: false },
 		company_id: {
 			type: mongoose.Schema.Types.ObjectId,
 			required: true,
 			ref: 'Companies',
 		},
-		credits: {
-			type: Number,
-			default: 0,
-		},
-		totalCredits: { type: Number, default: 0 },
-		credit_requests: {
-			type: [mongoose.Schema.Types.ObjectId],
-			ref: 'RequestCredits',
-		},
+		// credit_requests: {
+		// 	type: [mongoose.Schema.Types.ObjectId],
+		// 	ref: 'RequestCredits',
+		// },
 		department: {
 			type: String,
 			default: '',
 		},
-		search: {
-			type: [mongoose.Schema.Types.ObjectId],
-			ref: 'SaveSearch',
-		},
+		// search: {
+		// 	type: [mongoose.Schema.Types.ObjectId],
+		// 	ref: 'SaveSearch',
+		// },
 		role: {
 			type: String,
 			default: 'MEMBER',
@@ -62,7 +56,6 @@ const memberSchema = new Schema(
 		password: {
 			type: String,
 			required: true,
-			min: 6,
 		},
 		isLoggedIn: {
 			type: Boolean,

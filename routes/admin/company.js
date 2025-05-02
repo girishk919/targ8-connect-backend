@@ -34,6 +34,7 @@ const { verifyToken, accessAdmin } = require('../../helpers/authorize');
 const nodemailer = require('nodemailer');
 const blocked_model = require('../../models/company/blocked_model');
 const Product = require('../../models/admin/product_model');
+const sub_admin_model = require('../../models/sub-admin/sub_admin_model');
 
 let transport = nodemailer.createTransport({
 	pool: true,
@@ -744,26 +745,27 @@ router.post(
 	'/invite',
 	[authorize.verifyToken, authorize.accessAdmin],
 	async (req, res) => {
-		const { error } = inviteValidation.validate(req.body);
-		if (error) return res.status(400).json(error.details[0].message);
+		// const { error } = inviteValidation.validate(req.body);
+		// if (error) return res.status(400).json(error.details[0].message);
 
 		try {
 			const email = req.body.email.toLowerCase();
-			const company = await Companies.findById(req.query.company_id).populate(
-				'plan'
-			);
+			const company = await Companies.findById(req.query.company_id);
 			if (!company) return res.status(400).json('Company not found!');
 
-			if (company.plan == null)
-				return res
-					.status(400)
-					.json('Company currently has no subscription plan');
+			// if (company.plan == null)
+			// 	return res
+			// 		.status(400)
+			// 		.json('Company currently has no subscription plan');
 
 			const member = await Members.findOne({ email: email });
-			if (member) return res.status(400).json('Member already exists');
+			if (member) return res.status(400).json('Email already exists');
 
-			const invite = await Invites.findOne({ email: email });
-			if (invite) return res.status(400).json('Invite already sent');
+			const member2 = await Members.findOne({ username: req.body.username });
+			if (member2) return res.status(400).json('Username already exists');
+
+			// const invite = await Invites.findOne({ email: email });
+			// if (invite) return res.status(400).json('Invite already sent');
 
 			if (company.email === email)
 				return res.status(400).json('You cannot add your self as member!');
@@ -771,114 +773,108 @@ router.post(
 			const company7 = await Admins.findOne({ email: email });
 			if (company7) return res.status(400).json('Email already exists!');
 
-			const firstEmail = company.email.split('@');
-			const secondEmail = email.split('@');
+			const company8 = await sub_admin_model.findOne({ email: email });
+			if (company8) return res.status(400).json('Email already exists!');
 
-			if (firstEmail[1] !== secondEmail[1])
-				return res.status(400).json("Member doesn't belong to your company!");
+			const company9 = await Companies.findOne({ email: email });
+			if (company9) return res.status(400).json('Email already exists!');
 
-			if (company.credits < req.body.credits)
-				return res.status(400).json('Not enough credits');
+			const company10 = await Companies.findOne({
+				username: req.body.username,
+			});
+			if (company10) return res.status(400).json('Username already exists!');
 
-			if (
-				company.members.length + company.invites.length + 1 >=
-				company.plan.max_members
-			) {
-				return res
-					.status(200)
-					.json('Subscription does not allow more members to add.');
+			const salt = await bcrypt.genSalt(10);
+			const hashPassword = await bcrypt.hash(req.body.password, salt);
+
+			function generateUniqueCode(length = 6) {
+				const chars =
+					'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+				let result = '';
+				for (let i = 0; i < length; i++) {
+					result += chars.charAt(Math.floor(Math.random() * chars.length));
+				}
+				return result + Date.now().toString(36); // Add timestamp to make it unique
 			}
-			const createInvoice = new Invoices({
-				name: 'Add User',
-				company: req.query.company_id,
-				from: {
-					name: 'EmailAddress.ai',
-					address: '447 Broadway, 2nd floor, #713',
-					address2: 'NewYork, NY 10013, USA',
-					email: 'team@emailaddress.ai',
-				},
-				status: false,
-				item: {
-					subscription_type: 'Add User',
-					subscription_description: 'temp desc',
-					subscription_validity: 0,
-					endDate: null,
-					billingType: 'One Time',
-				},
-				amount: company.plan.cost_per_user,
-			});
 
-			const invoice = await createInvoice.save();
-			company.invoices.push(invoice._id);
-			await company.save();
+			const code = generateUniqueCode();
 
-			const activity = await CompanyActivityLogs.create({
-				company: company._id,
-				heading: 'Unpaid Invoice',
-				message: `You have an Unpaid Invoice for adding a new user !`,
-			});
-
-			const addInvite = new Invites({
+			await Members.create({
 				name: req.body.name,
 				email: email,
-				company_name: company.company_name,
-				credits: req.body.credits,
+				username: req.body.username,
+				company_id: company._id,
+				clientCode: code,
+				password: hashPassword,
 			});
 
-			const newInvite = await addInvite.save();
+			// const firstEmail = company.email.split('@');
+			// const secondEmail = email.split('@');
 
-			company.invites.push(newInvite._id);
+			// if (firstEmail[1] !== secondEmail[1])
+			// 	return res.status(400).json("Member doesn't belong to your company!");
 
-			await company.save();
+			// if (company.credits < req.body.credits)
+			// 	return res.status(400).json('Not enough credits');
 
-			const addCompanyActivityLog = new CompanyActivityLogs({
-				company: company._id,
-				heading: 'Add Member',
-				message: 'Invited ' + req.body.name + ' to join your company.',
-			});
+			// if (
+			// 	company.members.length + company.invites.length + 1 >=
+			// 	company.plan.max_members
+			// ) {
+			// 	return res
+			// 		.status(200)
+			// 		.json('Subscription does not allow more members to add.');
+			// }
 
-			await addCompanyActivityLog.save();
-			const msg = {
-				to: company.email,
-				from: 'team@emailaddress.ai',
-				subject: `You’ve just invited a team member to EmailAddress.ai`,
-				html: `<p>Your team member has been invited to access your EmailAddress.ai account.</p><br />
-			<p>If you have not requested one, please contact support via Live chat or send an email to team@emailaddress.ai </p><br/>
-			<p>Thanks,</p><p>Team at EmailAddress.ai</p><br /><p>447 Broadway, 2nd floor, #713</p><p>NewYork, NY 10013, USA</p>`,
-			};
-			const msg2 = {
-				to: newInvite.email,
-				from: 'team@emailaddress.ai',
-				subject: `You’ve were invited to EmailAddress.ai`,
-				html: `<p>You have been invited by your colleague to access EmailAddress.ai.</p><br />
-			<p>Click here to Join ${newInvite.company_name} on EmailAddress.ai platform, <a href=${process.env.FrontendURL}/teamSignup?invite_id=${newInvite._id}">Click Here</a></p><br />
-			<p>If you have received this email in error, please contact support via Live chat or send an email to team@emailaddress.ai</p><br/>
-			<p>Thanks,</p><p>Team at EmailAddress.ai</p><br /><p>447 Broadway, 2nd floor, #713</p><p>NewYork, NY 10013, USA</p>`,
-			};
+			// const addCompanyActivityLog = new CompanyActivityLogs({
+			// 	company: company._id,
+			// 	heading: 'Add Member',
+			// 	message: 'Invited ' + req.body.name + ' to join your company.',
+			// });
 
-			// sgMail
-			// 	.send(msg)
-			// 	.then(() => console.log('Invitation Sent!'))
-			// 	.catch((err) => console.log(err));
+			// await addCompanyActivityLog.save();
+			// const msg = {
+			// 	to: company.email,
+			// 	from: 'team@emailaddress.ai',
+			// 	subject: `You’ve just invited a team member to EmailAddress.ai`,
+			// 	html: `<p>Your team member has been invited to access your EmailAddress.ai account.</p><br />
+			// <p>If you have not requested one, please contact support via Live chat or send an email to team@emailaddress.ai </p><br/>
+			// <p>Thanks,</p><p>Team at EmailAddress.ai</p><br /><p>447 Broadway, 2nd floor, #713</p><p>NewYork, NY 10013, USA</p>`,
+			// };
+			// const msg2 = {
+			// 	to: newInvite.email,
+			// 	from: 'team@emailaddress.ai',
+			// 	subject: `You’ve were invited to EmailAddress.ai`,
+			// 	html: `<p>You have been invited by your colleague to access EmailAddress.ai.</p><br />
+			// <p>Click here to Join ${newInvite.company_name} on EmailAddress.ai platform, <a href=${process.env.FrontendURL}/teamSignup?invite_id=${newInvite._id}">Click Here</a></p><br />
+			// <p>If you have received this email in error, please contact support via Live chat or send an email to team@emailaddress.ai</p><br/>
+			// <p>Thanks,</p><p>Team at EmailAddress.ai</p><br /><p>447 Broadway, 2nd floor, #713</p><p>NewYork, NY 10013, USA</p>`,
+			// };
 
-			// sgMail
-			// 	.send(msg2)
-			// 	.then(() => res.json('Invitation Sent!'))
-			// 	.catch((err) => res.status(400).json('Error: ' + err));
-			transport.sendMail(msg, (err, info) => {
-				if (err) {
-					console.log(err);
-				} else {
-					console.log('Invitation Sent!');
-				}
-			});
-			transport.sendMail(msg2, (err, info) => {
-				if (err) {
-					res.status(400).json('Error: ' + err);
-				} else {
-					res.json('Invitation Sent!');
-				}
-			});
+			// // sgMail
+			// // 	.send(msg)
+			// // 	.then(() => console.log('Invitation Sent!'))
+			// // 	.catch((err) => console.log(err));
+
+			// // sgMail
+			// // 	.send(msg2)
+			// // 	.then(() => res.json('Invitation Sent!'))
+			// // 	.catch((err) => res.status(400).json('Error: ' + err));
+			// transport.sendMail(msg, (err, info) => {
+			// 	if (err) {
+			// 		console.log(err);
+			// 	} else {
+			// 		console.log('Invitation Sent!');
+			// 	}
+			// });
+			// transport.sendMail(msg2, (err, info) => {
+			// 	if (err) {
+			// 		res.status(400).json('Error: ' + err);
+			// 	} else {
+			// 		res.json('Invitation Sent!');
+			// 	}
+			// });
+			res.json('New Memeber Added!');
 		} catch (error) {
 			res.status(400).json('There was some error!');
 		}

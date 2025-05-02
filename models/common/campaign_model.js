@@ -9,6 +9,8 @@ const campaignsSchema = new Schema(
 		code: { type: String },
 		client: { type: String },
 		clientName: { type: String },
+		member: { type: String },
+		memberName: { type: String },
 		flightDetails: { type: String },
 		leadVolume: { type: String },
 		startDate: { type: String },

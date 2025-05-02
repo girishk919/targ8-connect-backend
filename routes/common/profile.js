@@ -203,19 +203,19 @@ router.post('/changePassword', [authorize.verifyToken], async (req, res) => {
 
 		await person.save();
 
-		var today = new Date().toLocaleDateString('en-us', {
-			year: 'numeric',
-			month: 'long',
-			day: 'numeric',
-		});
-		if (person.role === 'ADMIN') {
-			await AdminActivities.create({
-				person: person._id,
-				role: 'ADMIN',
-				heading: 'Password Changed',
-				message: `New password set at ${today}!`,
-			});
-		}
+		// var today = new Date().toLocaleDateString('en-us', {
+		// 	year: 'numeric',
+		// 	month: 'long',
+		// 	day: 'numeric',
+		// });
+		// if (person.role === 'ADMIN') {
+		// 	await AdminActivities.create({
+		// 		person: person._id,
+		// 		role: 'ADMIN',
+		// 		heading: 'Password Changed',
+		// 		message: `New password set at ${today}!`,
+		// 	});
+		// }
 		// if (person.role === 'SUB_ADMIN') {
 		// 	await AdminActivities.create({
 		// 		person: person._id,
@@ -224,21 +224,21 @@ router.post('/changePassword', [authorize.verifyToken], async (req, res) => {
 		// 		message: `Account have login at ${today}!`,
 		// 	});
 		// }
-		if (person.role === 'COMPANY') {
-			await CompanyActivities.create({
-				company: person._id,
-				heading: 'Password Changed',
-				message: `New password set at ${today}!`,
-			});
-		}
-		if (person.role === 'MEMBER') {
-			await MemberActivities.create({
-				member: person._id,
-				company: person.company_id._id,
-				heading: 'Password Changed',
-				message: `New password set at ${today}!`,
-			});
-		}
+		// if (person.role === 'COMPANY') {
+		// 	await CompanyActivities.create({
+		// 		company: person._id,
+		// 		heading: 'Password Changed',
+		// 		message: `New password set at ${today}!`,
+		// 	});
+		// }
+		// if (person.role === 'MEMBER') {
+		// 	await MemberActivities.create({
+		// 		member: person._id,
+		// 		company: person.company_id._id,
+		// 		heading: 'Password Changed',
+		// 		message: `New password set at ${today}!`,
+		// 	});
+		// }
 
 		return res.json('Password Changed');
 	} catch (error) {
