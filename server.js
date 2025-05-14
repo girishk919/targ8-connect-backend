@@ -11,6 +11,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fastcsv = require('fast-csv');
 const fs = require('fs');
+const path = require('path');
 const FormData = require('form-data');
 
 const nodemailer = require('nodemailer');
@@ -24,6 +25,10 @@ app.use(express.json({ limit: '2gb' }));
 app.use(express.urlencoded({ limit: '2gb', extended: true }));
 app.use(cors());
 app.use(compression());
+app.use(
+	'/campaignFiles',
+	express.static(path.join(__dirname, 'routes/campaignFiles'))
+);
 
 const apiLimiter = rateLimit({
 	windowMs: 1 * 1000, // 1 second window
