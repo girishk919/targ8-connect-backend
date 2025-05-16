@@ -208,6 +208,17 @@ router.post('/getAll', [authorize.verifyToken], async (req, res) => {
 	}
 });
 
+router.get('/single/:id', [authorize.verifyToken], async (req, res) => {
+	try {
+		const campaign = await campaign_model.findById(req.params.id);
+
+		return res.json({ message: 'Fetched Successfully', data: campaign });
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ success: false, message: 'Something went wrong' });
+	}
+});
+
 router.patch(
 	'/changeStatus',
 	[authorize.verifyToken, authorize.accessAdmin],
