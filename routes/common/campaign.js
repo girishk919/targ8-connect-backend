@@ -98,6 +98,61 @@ router.post(
 );
 
 router.post(
+	'/editDelivery',
+	[authorize.verifyToken],
+	upload.single('file'),
+	async (req, res) => {
+		try {
+			const campaign = await campaign_model.findById(req.body.id);
+			if (!campaign) {
+				return res
+					.status(404)
+					.json({ success: false, message: 'Campaign not found' });
+			}
+
+			const delivery = campaign.delivery.find(
+				(d) => d._id.toString() === req.body.delId
+			);
+			if (!delivery) {
+				return res
+					.status(404)
+					.json({ success: false, message: 'Delivery not found' });
+			}
+
+			Object.entries(req.body).forEach(([key, value]) => {
+				if (
+					key !== 'id' &&
+					key !== 'delId' &&
+					!key.startsWith('specification_')
+				) {
+					delivery[key] = value;
+				}
+			});
+
+			if (req.file) {
+				const fileData = {
+					path: req.file.path,
+					originalName: req.file.originalname,
+					specification: req.body[`specification_0`] || 'Delivery',
+					date: new Date().toISOString(),
+				};
+				delivery.files = delivery.files || [];
+				delivery.files.push(fileData);
+			}
+
+			delivery.lastUpdate = new Date().toISOString();
+
+			await campaign.save();
+
+			res.status(200).json('Updated Successfully');
+		} catch (err) {
+			console.error(err);
+			res.status(500).json({ success: false, message: 'Upload failed' });
+		}
+	}
+);
+
+router.post(
 	'/common',
 	[authorize.verifyToken, authorize.accessAdmin],
 	async (req, res) => {

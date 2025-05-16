@@ -37,6 +37,7 @@ const campaignsSchema = new Schema(
 		delivery: [
 			{
 				date: { type: String },
+				lastUpdate: { type: String },
 				leadsVolume: { type: String },
 				leadsScore: { type: String },
 				leadsUnderAudit: { type: String },
