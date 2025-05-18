@@ -17,7 +17,7 @@ const campaignsSchema = new Schema(
 		endDate: { type: Date },
 		pacing: { type: String },
 		deliverySchedule: { type: String },
-		deliveryDay: { type: String },
+		deliveryDay: { type: [String] },
 		specification: { type: String },
 		jobTitle: { type: String },
 		jobRole: { type: String },
