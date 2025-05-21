@@ -68,7 +68,7 @@ router.post(
 	}
 );
 
-router.post('/addComments', [authorize.verifyToken], async (req, res) => {
+router.post('/addComment', [authorize.verifyToken], async (req, res) => {
 	try {
 		var comments = {
 			isAdmin: req.body.isAdmin,

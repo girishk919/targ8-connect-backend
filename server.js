@@ -149,6 +149,12 @@ app.use('/key', keyRouter);
 const CampaignRouter = require('./routes/common/campaign');
 app.use('/campaign', CampaignRouter);
 
+const RFPRouter = require('./routes/common/rfp');
+app.use('/rfp', RFPRouter);
+
+const TicketRouter = require('./routes/common/tickets');
+app.use('/ticket', TicketRouter);
+
 const folderRouter = require('./routes/common/folders');
 app.use('/folders', folderRouter);
 
