@@ -8,6 +8,7 @@ const path = require('path');
 const campaign_model = require('../../models/common/campaign_model');
 const company_model = require('../../models/company/company_model');
 const member_model = require('../../models/member/member_model');
+const rfp_model = require('../../models/common/rfp_model');
 const uploadDir = path.join(__dirname, '../campaignFiles');
 
 const storage = multer.diskStorage({
@@ -58,7 +59,7 @@ router.post(
 				req.body.memberId = memb?._id;
 			}
 
-			await campaign_model.create(req.body);
+			await rfp_model.create(req.body);
 			res.status(200).json('Created Successfully');
 		} catch (err) {
 			console.error(err);
@@ -67,90 +68,46 @@ router.post(
 	}
 );
 
-router.post(
-	'/addDelivery',
-	[authorize.verifyToken],
-	upload.single('file'),
-	async (req, res) => {
-		try {
-			req.body.files = [
-				{
-					path: req.file.path,
-					originalName: req.file.originalname,
-					specification: req.body[`specification_0`] || 'Delivery',
-					date: new Date().toISOString(),
-				},
-			];
+router.post('/addComments', [authorize.verifyToken], async (req, res) => {
+	try {
+		var comments = {
+			isAdmin: req.body.isAdmin,
+			message: req.body.message,
+			date: new Date().toISOString(),
+		};
 
-			var delivery = { ...req.body, date: new Date().toISOString() };
+		const data = await rfp_model.findById(req.body.id);
+		data.comments.push(comments);
 
-			const data = await campaign_model.findById(req.body.id);
-			data.delivery.push(delivery);
+		await data.save();
 
-			await data.save();
-
-			res.status(200).json('Added Successfully');
-		} catch (err) {
-			console.error(err);
-			res.status(500).json({ success: false, message: 'Upload failed' });
-		}
+		res.status(200).json('Added Successfully');
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ success: false, message: 'Upload failed' });
 	}
-);
+});
 
-router.post(
-	'/editDelivery',
-	[authorize.verifyToken],
-	upload.single('file'),
-	async (req, res) => {
-		try {
-			const campaign = await campaign_model.findById(req.body.id);
-			if (!campaign) {
-				return res
-					.status(404)
-					.json({ success: false, message: 'Campaign not found' });
-			}
-
-			const delivery = campaign.delivery.find(
-				(d) => d._id.toString() === req.body.delId
-			);
-			if (!delivery) {
-				return res
-					.status(404)
-					.json({ success: false, message: 'Delivery not found' });
-			}
-
-			Object.entries(req.body).forEach(([key, value]) => {
-				if (
-					key !== 'id' &&
-					key !== 'delId' &&
-					!key.startsWith('specification_')
-				) {
-					delivery[key] = value;
-				}
-			});
-
-			if (req.file) {
-				const fileData = {
-					path: req.file.path,
-					originalName: req.file.originalname,
-					specification: req.body[`specification_0`] || 'Delivery',
-					date: new Date().toISOString(),
-				};
-				delivery.files = delivery.files || [];
-				delivery.files.push(fileData);
-			}
-
-			delivery.lastUpdate = new Date().toISOString();
-
-			await campaign.save();
-
-			res.status(200).json('Updated Successfully');
-		} catch (err) {
-			console.error(err);
-			res.status(500).json({ success: false, message: 'Upload failed' });
+router.post('/deleteComment', [authorize.verifyToken], async (req, res) => {
+	try {
+		const rfp = await rfp_model.findById(req.body.id);
+		if (!rfp) {
+			return res.status(404).json({ success: false, message: 'RFP not found' });
 		}
+
+		const comments = rfp.comments.filter(
+			(d) => d._id.toString() !== req.body.commentId
+		);
+
+		rfp.comments = comments;
+		await rfp.save();
+
+		res.status(200).json('Deleted Successfully');
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ success: false, message: 'Upload failed' });
 	}
-);
+});
 
 router.post(
 	'/common',
@@ -188,7 +145,7 @@ router.post(
 				query['member'] = { $in: req.body.members };
 			}
 
-			const data = await campaign_model
+			const data = await rfp_model
 				.find(query)
 				.sort({ updatedAt: -1 })
 				.skip(skip)
@@ -196,7 +153,7 @@ router.post(
 				.populate('company')
 				.populate('memberId');
 
-			const totalCount = await campaign_model.countDocuments(query);
+			const totalCount = await rfp_model.countDocuments(query);
 
 			var pages = Math.ceil(totalCount / limit);
 
@@ -223,9 +180,6 @@ router.post('/getAll', [authorize.verifyToken], async (req, res) => {
 		var skip = (page - 1) * limit;
 
 		var query = { client: person?.clientCode };
-		if (person.role === 'MEMBER') {
-			query = { member: person?.clientCode };
-		}
 		if (req.body.search) {
 			query['name'] = { $regex: req.body.search, $options: 'i' };
 		}
@@ -242,7 +196,7 @@ router.post('/getAll', [authorize.verifyToken], async (req, res) => {
 			query['member'] = { $in: req.body.members };
 		}
 
-		const data = await campaign_model
+		const data = await rfp_model
 			.find(query)
 			.sort({ updatedAt: -1 })
 			.skip(skip)
@@ -250,7 +204,7 @@ router.post('/getAll', [authorize.verifyToken], async (req, res) => {
 			.populate('company')
 			.populate('memberId');
 
-		const totalCount = await campaign_model.countDocuments(query);
+		const totalCount = await rfp_model.countDocuments(query);
 
 		var pages = Math.ceil(totalCount / limit);
 
@@ -268,9 +222,9 @@ router.post('/getAll', [authorize.verifyToken], async (req, res) => {
 
 router.get('/single/:id', [authorize.verifyToken], async (req, res) => {
 	try {
-		const campaign = await campaign_model.findById(req.params.id);
+		const rfp = await rfp_model.findById(req.params.id);
 
-		return res.json({ message: 'Fetched Successfully', data: campaign });
+		return res.json({ message: 'Fetched Successfully', data: rfp });
 	} catch (err) {
 		console.error(err);
 		res.status(500).json({ success: false, message: 'Something went wrong' });
@@ -282,7 +236,7 @@ router.patch(
 	[authorize.verifyToken, authorize.accessAdmin],
 	async (req, res) => {
 		try {
-			await campaign_model.findByIdAndUpdate(req.body.id, {
+			await rfp_model.findByIdAndUpdate(req.body.id, {
 				$set: { status: req.body.status },
 			});
 

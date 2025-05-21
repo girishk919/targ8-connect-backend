@@ -8,6 +8,8 @@ const path = require('path');
 const campaign_model = require('../../models/common/campaign_model');
 const company_model = require('../../models/company/company_model');
 const member_model = require('../../models/member/member_model');
+const rfp_model = require('../../models/common/rfp_model');
+const ticket_model = require('../../models/common/ticket_model');
 const uploadDir = path.join(__dirname, '../campaignFiles');
 
 const storage = multer.diskStorage({
@@ -45,20 +47,9 @@ router.post(
 			req.body.files = req.files.map((file, index) => ({
 				path: file.path,
 				originalName: file.originalname,
-				specification: req.body[`specification_${index}`] || '',
 			}));
 
-			const comp = await company_model.findOne({ clientCode: req.body.client });
-			req.body.company = comp?._id;
-
-			if (req.body.member) {
-				const memb = await member_model.findOne({
-					clientCode: req.body.member,
-				});
-				req.body.memberId = memb?._id;
-			}
-
-			await campaign_model.create(req.body);
+			await ticket_model.create(req.body);
 			res.status(200).json('Created Successfully');
 		} catch (err) {
 			console.error(err);
@@ -68,83 +59,15 @@ router.post(
 );
 
 router.post(
-	'/addDelivery',
-	[authorize.verifyToken],
-	upload.single('file'),
+	'/addResponse',
+	[authorize.verifyToken, authorize.accessAdmin],
 	async (req, res) => {
 		try {
-			req.body.files = [
-				{
-					path: req.file.path,
-					originalName: req.file.originalname,
-					specification: req.body[`specification_0`] || 'Delivery',
-					date: new Date().toISOString(),
-				},
-			];
-
-			var delivery = { ...req.body, date: new Date().toISOString() };
-
-			const data = await campaign_model.findById(req.body.id);
-			data.delivery.push(delivery);
-
-			await data.save();
-
-			res.status(200).json('Added Successfully');
-		} catch (err) {
-			console.error(err);
-			res.status(500).json({ success: false, message: 'Upload failed' });
-		}
-	}
-);
-
-router.post(
-	'/editDelivery',
-	[authorize.verifyToken],
-	upload.single('file'),
-	async (req, res) => {
-		try {
-			const campaign = await campaign_model.findById(req.body.id);
-			if (!campaign) {
-				return res
-					.status(404)
-					.json({ success: false, message: 'Campaign not found' });
-			}
-
-			const delivery = campaign.delivery.find(
-				(d) => d._id.toString() === req.body.delId
-			);
-			if (!delivery) {
-				return res
-					.status(404)
-					.json({ success: false, message: 'Delivery not found' });
-			}
-
-			Object.entries(req.body).forEach(([key, value]) => {
-				if (
-					key !== 'id' &&
-					key !== 'delId' &&
-					!key.startsWith('specification_')
-				) {
-					delivery[key] = value;
-				}
+			await rfp_model.findByIdAndUpdate(req.body.id, {
+				$set: { response: req.body.response },
 			});
 
-			if (req.file) {
-				const fileData = {
-					path: req.file.path,
-					originalName: req.file.originalname,
-					specification: req.body[`specification_0`] || 'Delivery',
-					date: new Date().toISOString(),
-				};
-				delivery.files = delivery.files || [];
-				delivery.files.push(fileData);
-			}
-
-			delivery.lastUpdate = new Date().toISOString();
-
-			await campaign.save();
-
-			res.status(200).json('Updated Successfully');
+			res.status(200).json('Added Successfully');
 		} catch (err) {
 			console.error(err);
 			res.status(500).json({ success: false, message: 'Upload failed' });
@@ -171,6 +94,9 @@ router.post(
 			if (req.body.status !== 'all') {
 				query['status'] = req.body.status;
 			}
+			if (req.body.priority !== 'all') {
+				query['priority'] = req.body.priority;
+			}
 			if (req.body.startDate && req.body.endDate) {
 				query['$and'] = [
 					{ startDate: { $gte: new Date(req.body.startDate) } },
@@ -184,11 +110,8 @@ router.post(
 			if (req.body.clients?.length) {
 				query['client'] = { $in: req.body.clients };
 			}
-			if (req.body.members?.length) {
-				query['member'] = { $in: req.body.members };
-			}
 
-			const data = await campaign_model
+			const data = await ticket_model
 				.find(query)
 				.sort({ updatedAt: -1 })
 				.skip(skip)
@@ -196,7 +119,7 @@ router.post(
 				.populate('company')
 				.populate('memberId');
 
-			const totalCount = await campaign_model.countDocuments(query);
+			const totalCount = await ticket_model.countDocuments(query);
 
 			var pages = Math.ceil(totalCount / limit);
 
@@ -222,27 +145,18 @@ router.post('/getAll', [authorize.verifyToken], async (req, res) => {
 		var limit = req.body.lm ? Number(req.body.lm) : 10;
 		var skip = (page - 1) * limit;
 
-		var query = { client: person?.clientCode };
-		if (person.role === 'MEMBER') {
-			query = { member: person?.clientCode };
-		}
+		var query = { company: person?._id };
 		if (req.body.search) {
-			query['name'] = { $regex: req.body.search, $options: 'i' };
+			query['subject'] = { $regex: req.body.search, $options: 'i' };
 		}
 		if (req.body.status !== 'all') {
 			query['status'] = req.body.status;
 		}
-		if (req.body.startDate) {
-			query['startDate'] = { $gte: new Date(req.body.startDate) };
-		}
-		if (req.body.endDate) {
-			query['endDate'] = { $lte: new Date(req.body.endDate) };
-		}
-		if (req.body.members?.length) {
-			query['member'] = { $in: req.body.members };
+		if (req.body.priority !== 'all') {
+			query['priority'] = req.body.priority;
 		}
 
-		const data = await campaign_model
+		const data = await ticket_model
 			.find(query)
 			.sort({ updatedAt: -1 })
 			.skip(skip)
@@ -250,7 +164,7 @@ router.post('/getAll', [authorize.verifyToken], async (req, res) => {
 			.populate('company')
 			.populate('memberId');
 
-		const totalCount = await campaign_model.countDocuments(query);
+		const totalCount = await ticket_model.countDocuments(query);
 
 		var pages = Math.ceil(totalCount / limit);
 
@@ -268,9 +182,9 @@ router.post('/getAll', [authorize.verifyToken], async (req, res) => {
 
 router.get('/single/:id', [authorize.verifyToken], async (req, res) => {
 	try {
-		const campaign = await campaign_model.findById(req.params.id);
+		const rfp = await ticket_model.findById(req.params.id);
 
-		return res.json({ message: 'Fetched Successfully', data: campaign });
+		return res.json({ message: 'Fetched Successfully', data: rfp });
 	} catch (err) {
 		console.error(err);
 		res.status(500).json({ success: false, message: 'Something went wrong' });
@@ -282,8 +196,25 @@ router.patch(
 	[authorize.verifyToken, authorize.accessAdmin],
 	async (req, res) => {
 		try {
-			await campaign_model.findByIdAndUpdate(req.body.id, {
+			await ticket_model.findByIdAndUpdate(req.body.id, {
 				$set: { status: req.body.status },
+			});
+
+			return res.json('Updated Successfully');
+		} catch (err) {
+			console.error(err);
+			res.status(500).json({ success: false, message: 'Something went wrong' });
+		}
+	}
+);
+
+router.patch(
+	'/changePriority',
+	[authorize.verifyToken, authorize.accessAdmin],
+	async (req, res) => {
+		try {
+			await ticket_model.findByIdAndUpdate(req.body.id, {
+				$set: { priority: req.body.priority },
 			});
 
 			return res.json('Updated Successfully');
