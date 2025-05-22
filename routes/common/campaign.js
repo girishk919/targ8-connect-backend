@@ -266,6 +266,27 @@ router.post('/getAll', [authorize.verifyToken], async (req, res) => {
 	}
 });
 
+router.post('/myCampaigns', [authorize.verifyToken], async (req, res) => {
+	try {
+		const person = req.person;
+		if (!person) return res.status(400).json('Account not found!');
+
+		var query = { client: person?.clientCode };
+
+		const data = await campaign_model
+			.find(query)
+			.select('_id name code')
+			.sort({ updatedAt: -1 });
+
+		return res.json({
+			data: data,
+		});
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ success: false, message: 'Something went wrong' });
+	}
+});
+
 router.get('/single/:id', [authorize.verifyToken], async (req, res) => {
 	try {
 		const campaign = await campaign_model.findById(req.params.id);
