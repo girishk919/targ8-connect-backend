@@ -155,7 +155,7 @@ router.post('/getAll', [authorize.verifyToken], async (req, res) => {
 		var limit = req.body.lm ? Number(req.body.lm) : 10;
 		var skip = (page - 1) * limit;
 
-		var query = { company: person?._id };
+		var query = { client: person?.clientCode };
 		if (req.body.search) {
 			query['subject'] = { $regex: req.body.search, $options: 'i' };
 		}
