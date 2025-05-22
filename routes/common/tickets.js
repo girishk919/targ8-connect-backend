@@ -73,7 +73,7 @@ router.post(
 	[authorize.verifyToken, authorize.accessAdmin],
 	async (req, res) => {
 		try {
-			await rfp_model.findByIdAndUpdate(req.body.id, {
+			await ticket_model.findByIdAndUpdate(req.body.id, {
 				$set: { response: req.body.response },
 			});
 
