@@ -6,7 +6,9 @@ const Schema = mongoose.Schema;
 const ticketSchema = new Schema(
 	{
 		code: { type: String },
+		client: { type: String },
 		company: { type: mongoose.Schema.Types.ObjectId, ref: 'Companies' },
+		member: { type: String },
 		memberId: { type: mongoose.Schema.Types.ObjectId, ref: 'Members' },
 		subject: { type: String },
 		message: { type: String },

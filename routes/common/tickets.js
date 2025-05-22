@@ -49,6 +49,16 @@ router.post(
 				originalName: file.originalname,
 			}));
 
+			const comp = await company_model.findOne({ clientCode: req.body.client });
+			req.body.company = comp?._id;
+
+			if (req.body.member) {
+				const memb = await member_model.findOne({
+					clientCode: req.body.member,
+				});
+				req.body.memberId = memb?._id;
+			}
+
 			await ticket_model.create(req.body);
 			res.status(200).json('Created Successfully');
 		} catch (err) {
